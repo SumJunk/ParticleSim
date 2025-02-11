@@ -14,7 +14,7 @@ Simulates particle movement under gravitational forces using Gravitational Force
 To download and use the project on Centaurus ensure you are on a computing node, run:  
 ```bash
 git clone https://github.com/SumJunk/ParticleSim.git
-cd Particle
+cd ParticleSim
 git checkout master
 g++ -O3 Particle.cpp -o Particle
 ./Particle <num_particles> <dt> <num_steps> <output_interval>
