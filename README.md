@@ -1,4 +1,4 @@
-# MergeSort
+# Particle
 
 # Overview  
 Simulates particle movement under gravitational forces using Gravitational Force and Equations of Motion to update the position of a particle over time. You may add the number of particles, time step per update, number of simulation steps, and the output intervals to modify your experience. "output.log" is then created to check each interval.
