@@ -2,13 +2,13 @@ OS := $(shell uname -s)
 
 ifeq ($(OS), Windows_NT)
     CC = cl.exe
-    CFLAGS = /EHsc /std:c++17
+    CFLAGS = /EHsc /std:c++17 /openmp
     LDFLAGS = 
     RM = del /Q
 else
     CC = g++
-    CFLAGS = -std=c++17 -Wall
-    LDFLAGS =
+    CFLAGS = -std=c++17 -Wall -fopenmp
+    LDFLAGS = -fopenmp
     RM = rm -f
 endif
 
@@ -23,3 +23,4 @@ $(TARGET): $(SRC)
 
 clean:
 	$(RM) $(TARGET)
+

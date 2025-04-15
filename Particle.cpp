@@ -1,4 +1,5 @@
 #include <iostream>
+#include <omp.h>
 #include <vector>
 #include <cmath>
 #include <fstream>
@@ -50,49 +51,70 @@ public:
     }
 
     void calculateGravitationalForces() {
-        for (auto &p : particles) {
-            p.forceX = p.forceY = p.forceZ = 0.0;
+    
+        #pragma omp parallel for
+        for (int i = 0; i < particles.size(); ++i) {
+            particles[i].forceX = particles[i].forceY = particles[i].forceZ = 0.0;
         }
-
-        for (size_t i = 0; i < particles.size(); ++i) {
-            for (size_t j = i + 1; j < particles.size(); ++j) {
-                Particle &p1 = particles[i];
-                Particle &p2 = particles[j];
-
-                double dx = p2.posX - p1.posX;
-                double dy = p2.posY - p1.posY;
-                double dz = p2.posZ - p1.posZ;
-                double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-                double force = (G * p1.mass * p2.mass) / (dist * dist);
-
-                double fx = force * dx / dist;
-                double fy = force * dy / dist;
-                double fz = force * dz / dist;
-
-                p1.forceX += fx;
-                p1.forceY += fy;
-                p1.forceZ += fz;
-
-                p2.forceX -= fx;
-                p2.forceY -= fy;
-                p2.forceZ -= fz;
+    
+        #pragma omp parallel
+        {
+            std::vector<double> localForceX(particles.size(), 0.0);
+            std::vector<double> localForceY(particles.size(), 0.0);
+            std::vector<double> localForceZ(particles.size(), 0.0);
+    
+            #pragma omp for schedule(dynamic)
+            for (int i = 0; i < particles.size(); ++i) {
+                for (int j = i + 1; j < particles.size(); ++j) {
+                    Particle &p1 = particles[i];
+                    Particle &p2 = particles[j];
+    
+                    double dx = p2.posX - p1.posX;
+                    double dy = p2.posY - p1.posY;
+                    double dz = p2.posZ - p1.posZ;
+                    double distSqr = dx * dx + dy * dy + dz * dz;
+                    double dist = std::sqrt(distSqr);
+                    double force = (G * p1.mass * p2.mass) / distSqr;
+    
+                    double fx = force * dx / dist;
+                    double fy = force * dy / dist;
+                    double fz = force * dz / dist;
+    
+                    localForceX[i] += fx;
+                    localForceY[i] += fy;
+                    localForceZ[i] += fz;
+    
+                    localForceX[j] -= fx;
+                    localForceY[j] -= fy;
+                    localForceZ[j] -= fz;
+                }
+            }
+            #pragma omp critical
+            {
+                for (int i = 0; i < particles.size(); ++i) {
+                    particles[i].forceX += localForceX[i];
+                    particles[i].forceY += localForceY[i];
+                    particles[i].forceZ += localForceZ[i];
+                }
             }
         }
     }
 
     void applyForces(double dt) {
-        for (auto &p : particles) {
-            p.velX += (p.forceX / p.mass) * dt;
-            p.velY += (p.forceY / p.mass) * dt;
-            p.velZ += (p.forceZ / p.mass) * dt;
+        #pragma omp parallel for
+        for (int i = 0; i < particles.size(); ++i) {
+            particles[i].velX += (particles[i].forceX / particles[i].mass) * dt;
+            particles[i].velY += (particles[i].forceY / particles[i].mass) * dt;
+            particles[i].velZ += (particles[i].forceZ / particles[i].mass) * dt;
         }
     }
-
+    
     void moveParticles(double dt) {
-        for (auto &p : particles) {
-            p.posX += p.velX * dt;
-            p.posY += p.velY * dt;
-            p.posZ += p.velZ * dt;
+        #pragma omp parallel for
+        for (int i = 0; i < particles.size(); ++i) {
+            particles[i].posX += particles[i].velX * dt;
+            particles[i].posY += particles[i].velY * dt;
+            particles[i].posZ += particles[i].velZ * dt;
         }
     }
 
